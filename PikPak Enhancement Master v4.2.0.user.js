@@ -7,8 +7,8 @@
 // @name:ja            PikPak Enhancement Master
 // @name:id            PikPak Enhancement Master
 // @name:ms            PikPak Enhancement Master
-// @namespace          https://github.com/digbug82/
-// @version            4.2.0
+// @namespace          https://github.com/ericvlog/PikPak-Enhancement-Master
+// @version            4.2.1
 // @author             digbug82
 // @license            AGPL-3.0-or-later
 // @description        PikPak 网盘增强：集成 Aria2/Gopeed/ABDM/IDM 下载、下载加速、下载过滤、分享链接解析、文件/文件夹查重、批量重命名、资源清理、批量解压、PotPlayer 直达、M3U 导出、排序与搜索增强、TXT 磁链提取、云归档、数据迁移、目录树导出、以图搜图、视音频播放增强等。
@@ -22,6 +22,8 @@
 // @match              https://mypikpak.com/drive/*
 // @match              https://app.mypikpak.com/*
 // @match              https://drive.mypikpak.com/*
+// @downloadURL        https://raw.githubusercontent.com/ericvlog/PikPak-Enhancement-Master/main/PikPak%20Enhancement%20Master%20v4.2.0.user.js
+// @updateURL          https://raw.githubusercontent.com/ericvlog/PikPak-Enhancement-Master/main/PikPak%20Enhancement%20Master%20v4.2.0.user.js
 // @icon               https://cdn.jsdelivr.net/gh/digbug82/PikPak_Enhancement_Master@main/img/logo.svg
 // @homepage           https://github.com/digbug82/PikPak_Enhancement_Master
 // @supportURL         https://github.com/digbug82/PikPak_Enhancement_Master/issues
