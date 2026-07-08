@@ -8,7 +8,7 @@
 // @name:id            PikPak Enhancement Master
 // @name:ms            PikPak Enhancement Master
 // @namespace          https://github.com/ericvlog/PikPak-Enhancement-Master
-// @version            4.2.1
+// @version            4.2.2
 // @author             digbug82
 // @license            AGPL-3.0-or-later
 // @description        PikPak 网盘增强：集成 Aria2/Gopeed/ABDM/IDM 下载、下载加速、下载过滤、分享链接解析、文件/文件夹查重、批量重命名、资源清理、批量解压、PotPlayer 直达、M3U 导出、排序与搜索增强、TXT 磁链提取、云归档、数据迁移、目录树导出、以图搜图、视音频播放增强等。
@@ -9033,7 +9033,6 @@ ${CONF.icons.invert}
 <div class="pk-grp">
 <button class="pk-btn" id="pk-migrate" data-pk-tip="${L.tip_migrate}" style="color: var(--pk-pri);">${CONF.icons.migrate} <span>${L.btn_migrate}</span></button>
 <button class="pk-btn" id="pk-magnet-archive-check" data-pk-tip="${L.tip_magnet_archive_check}">${CONF.icons.cloudArchive} <span>${L.btn_magnet_archive_check}</span></button>
-<button class="pk-btn" id="pk-export-magnet-links" data-pk-tip="${L.tip_export_magnet_links || '导出选中项磁力链接 [Alt]+[X]'}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> <span>${L.btn_export_magnet_links || '导出磁链'}</span></button>
 <button class="pk-btn" id="pk-img-search" data-pk-tip="${L.btn_img_search}">${pkIconSized('imgSearch', 16)} <span>${L.btn_img_search.replace(' [F]', '')}</span></button>
 <button class="pk-btn" id="pk-export-m3u" data-pk-tip="${L.tip_export_m3u}">${CONF.icons.exportM3U} <span>${L.btn_export_m3u}</span></button>
 <button class="pk-btn" id="pk-ext" data-pk-tip="${L.tip_ext}">${CONF.icons.ext} <span>${L.btn_ext}</span></button>
@@ -9359,7 +9358,6 @@ btnPrune: el.querySelector('#pk-prune'),
 btnUnzip: el.querySelector('#pk-unzip'),
 btnMigrate: el.querySelector('#pk-migrate'),
 btnMagnetArchiveCheck: el.querySelector('#pk-magnet-archive-check'),
-btnExportMagnetLinks: el.querySelector('#pk-export-magnet-links'),
 btnExportM3U: el.querySelector('#pk-export-m3u'),
 btnBlacklistManager: el.querySelector('#pk-blacklist-manager'),
 uploadWrap: el.querySelector('#pk-upload-wrap'),
@@ -32640,14 +32638,6 @@ UI.btnMagnetArchiveCheck.click();
 return;
 }
 
-if (e.altKey && (e.key === 'x' || e.key === 'X')) {
-e.preventDefault();
-if (UI.btnExportMagnetLinks && !UI.btnExportMagnetLinks.disabled && UI.btnExportMagnetLinks.style.display !== 'none') {
-UI.btnExportMagnetLinks.click();
-}
-return;
-}
-
 if (e.altKey && (e.key === 'm' || e.key === 'M')) {
 e.preventDefault();
 if (UI.btnMigrate && !UI.btnMigrate.disabled && UI.btnMigrate.style.display !== 'none') {
@@ -33199,7 +33189,7 @@ if (UI.chkAll) {
 UI.chkAll.checked = hasAll;
 UI.chkAll.indeterminate = hasSome;
 }
-[UI.btnDel, UI.btnRename, UI.btnBulkRename, UI.btnCut, UI.btnCopy, UI.btnPaste, UI.btnPrune, UI.btnUnzip, UI.btnNewFolder, UI.btnRefresh, UI.btnBlacklistManager, UI.btnMigrate, UI.btnMagnetArchiveCheck, UI.btnExportMagnetLinks].forEach(b => {
+[UI.btnDel, UI.btnRename, UI.btnBulkRename, UI.btnCut, UI.btnCopy, UI.btnPaste, UI.btnPrune, UI.btnUnzip, UI.btnNewFolder, UI.btnRefresh, UI.btnBlacklistManager, UI.btnMigrate, UI.btnMagnetArchiveCheck].forEach(b => {
 if (b) {
 b.disabled = true;
 b.style.display = 'none';
@@ -33419,14 +33409,6 @@ UI.btnMagnetArchiveCheck.style.display = canShowMagnetArchiveCheck ? 'inline-fle
 UI.btnMagnetArchiveCheck.disabled = !canShowMagnetArchiveCheck || !hasSel;
 UI.btnMagnetArchiveCheck.style.cursor = UI.btnMagnetArchiveCheck.disabled ? 'not-allowed' : 'pointer';
 UI.btnMagnetArchiveCheck.style.opacity = UI.btnMagnetArchiveCheck.disabled ? '0.4' : '1';
-}
-
-if (UI.btnExportMagnetLinks) {
-const canShowExportMagnetLinks = !S.trashMode && !S.shareMode && !S.uploadMode && !S.offlineMode && !S.historyMode && !S.linkBookmarkMode && !S.shareParseMode;
-UI.btnExportMagnetLinks.style.display = canShowExportMagnetLinks ? 'inline-flex' : 'none';
-UI.btnExportMagnetLinks.disabled = !canShowExportMagnetLinks || !hasSel;
-UI.btnExportMagnetLinks.style.cursor = UI.btnExportMagnetLinks.disabled ? 'not-allowed' : 'pointer';
-UI.btnExportMagnetLinks.style.opacity = UI.btnExportMagnetLinks.disabled ? '0.4' : '1';
 }
 
 const hasClipData = S.clipItems && S.clipItems.length > 0;
@@ -48385,112 +48367,10 @@ clearAllPlayHistory();
 };
 }
 
-async function handleExportMagnetLinksSelected() {
-const L = getStrings();
-const selectedIds = S.getSelectedIds();
-if (!selectedIds.length) {
-showToast('请先选择文件或文件夹', 'warning');
-return;
-}
-
-const allItems = [];
-selectedIds.forEach(id => {
-const item = S.itemMap.get(id);
-if (item) allItems.push(item);
-});
-
-const fb = FloatBarManager.create('正在提取磁力链接...');
-
-try {
-fb.update(`正在提取磁力链接... (共 ${allItems.length} 个选中项)`);
-
-const results = [];
-const seen = new Set();
-
-for (const item of allItems) {
-let links = [];
-try {
-links = getTraceableMagnetArchiveLinksFromResource(item);
-} catch (e) {}
-
-if (!links.length && item.kind !== 'drive#folder') {
-try {
-const detail = await apiGet(item.id);
-links = getTraceableMagnetArchiveLinksFromResource(detail);
-} catch (e) {}
-}
-
-for (const link of links) {
-let meta;
-try {
-meta = normalizeMagnetArchiveLink(link, item.name || '');
-} catch (e) {
-meta = null;
-}
-const key = meta && meta.ok ? meta.primaryKey : link.toLowerCase();
-if (key && !seen.has(key)) {
-seen.add(key);
-results.push({ name: item.name || '未知', link });
-}
-}
-}
-
-fb.destroy();
-showExportMagnetLinksModal(results);
-
-} catch (e) {
-fb.destroy();
-showToast('错误: ' + (e.message || e), 'error');
-}
-}
-
-function showExportMagnetLinksModal(results) {
-const m = showModal(`
-<h3 style="border-bottom:1px solid var(--pk-bd); padding-bottom:10px; margin-bottom:15px;">
-磁力链接导出 (${results.length} 个)
-</h3>
-<div style="max-height:60vh; overflow-y:auto; font-size:13px; line-height:1.6;">
-${results.length === 0
-? '<div style="text-align:center; padding:40px; opacity:0.5;">未找到磁力链接</div>'
-: results.map((r) => `
-<div style="padding:6px 0; border-bottom:1px solid var(--pk-bd);">
-<div style="color:#888; font-size:12px;">${esc(r.name)}</div>
-<div style="word-break:break-all; color:var(--pk-pri); font-family:monospace; font-size:12px;">${esc(r.link)}</div>
-</div>
-`).join('')
-}
-</div>
-<div class="pk-modal-act">
-<button class="pk-btn" id="exp_mag_close">关闭</button>
-${results.length ? `<button class="pk-btn pri" id="exp_mag_copy">复制全部 (${results.length})</button>` : ''}
-</div>
-`);
-
-const box = m.querySelector('.pk-modal');
-if (box) Object.assign(box.style, { width: '700px', padding: '24px', boxSizing: 'border-box' });
-
-m.querySelector('#exp_mag_close').onclick = () => m.remove();
-
-const copyBtn = m.querySelector('#exp_mag_copy');
-if (copyBtn) {
-copyBtn.onclick = () => {
-const text = results.map(r => r.link).join('\n');
-GM_setClipboard(text);
-copyBtn.textContent = '已复制!';
-copyBtn.style.background = '#4CAF50';
-setTimeout(() => m.remove(), 800);
-};
-}
-}
-
 if (UI.btnMagnetArchiveCheck) {
 UI.btnMagnetArchiveCheck.onclick = () => {
 handleMagnetArchiveCheckSelected();
 };
-}
-
-if (UI.btnExportMagnetLinks) {
-UI.btnExportMagnetLinks.onclick = () => handleExportMagnetLinksSelected();
 }
 
 UI.btnDel.onclick = async () => {
@@ -52409,22 +52289,24 @@ function renderMagnetArchiveCheckRows(result) {
 const L = getStrings();
 const rows = [];
 const push = (type, list, cls, label) => {
-(list || []).forEach(row => rows.push({ type, cls, label, item: row.item, key: row.key || row.meta && row.meta.primaryKey || '', reason: row.reason || '' }));
+(list || []).forEach(row => rows.push({ type, cls, label, item: row.item, key: row.key || row.meta && row.meta.primaryKey || '', reason: row.reason || '', meta: row.meta }));
 };
 push('ok', result.ok, 'ok', L.label_magnet_archive_can_archive);
 push('dup', result.dup, 'dup', L.label_magnet_archive_duplicate);
 push('skip', result.skip, 'skip', L.label_magnet_archive_skipped);
 push('bad', result.bad, 'bad', L.label_magnet_archive_invalid);
 const maxRows = Number(CONF.magnetArchivePreviewMaxRows) || 80;
-return rows.slice(0, maxRows).map(row => {
+return rows.slice(0, maxRows).map((row, idx) => {
 const title = getMagnetArchiveItemTitle(row.item);
 const safeTitle = esc(title);
 const tipHtml = esc(safeTitle);
 const cover = getMagnetArchiveTooltipCoverUrl(row.item);
 const tipAttrs = `data-pk-archive-title="${safeTitle}" data-pk-tip="${safeTitle}" data-pk-tip-html="${tipHtml}"${cover ? ` data-pk-thumb="${esc(cover)}"` : ''}`;
+const magnetUrl = row.meta && row.meta.rawMagnet ? esc(row.meta.rawMagnet) : '';
+const canExtract = row.type === 'ok' && magnetUrl;
 return `
 <div class="pk-magnet-archive-row">
-<div><span class="pk-magnet-archive-status ${row.cls}">${esc(row.label)}</span></div>
+<div>${canExtract ? `<input type="checkbox" class="pk-mag-extract-cb" data-magnet="${magnetUrl}" data-idx="${idx}" style="margin-right:6px;cursor:pointer;">` : ''}<span class="pk-magnet-archive-status ${row.cls}">${esc(row.label)}</span></div>
 <div class="pk-magnet-archive-title pk-magnet-archive-text" ${tipAttrs}><span class="pk-magnet-archive-title-icon" aria-hidden="true">${getMagnetArchiveOfficialIconHtml(row.item)}</span><span class="pk-magnet-archive-title-name pk-magnet-archive-text" ${tipAttrs}>${safeTitle}</span></div>
 <div class="pk-magnet-archive-text">${esc(row.key || row.reason)}</div>
 </div>`;
@@ -52449,11 +52331,12 @@ const m = showModal(`
 <div class="pk-magnet-archive-card"><b>${skip}</b><span>${esc(L.label_magnet_archive_skipped)}</span></div>
 <div class="pk-magnet-archive-card"><b>${bad}</b><span>${esc(L.label_magnet_archive_invalid)}</span></div>
 </div>
+${ok ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;"><button class="pk-btn" id="pk_magnet_extract_select_all" style="padding:2px 10px;font-size:12px;">全选</button><button class="pk-btn" id="pk_magnet_extract_deselect_all" style="padding:2px 10px;font-size:12px;">取消全选</button><span id="pk_magnet_extract_count" style="color:#888;">已选 0/${ok}</span></div>` : ''}
 <div class="pk-magnet-archive-table">
-<div class="pk-magnet-archive-row pk-magnet-archive-head"><div>${esc(L.label_magnet_archive_reason)}</div><div>${esc(L.label_magnet_archive_source)}</div><div>${esc(L.label_magnet_archive_key)}</div></div>
+<div class="pk-magnet-archive-row pk-magnet-archive-head"><div>${ok ? '选择' : ''}${esc(L.label_magnet_archive_reason)}</div><div>${esc(L.label_magnet_archive_source)}</div><div>${esc(L.label_magnet_archive_key)}</div></div>
 ${rowsHtml}
 </div>
-<div class="pk-modal-act"><button class="pk-btn" id="pk_magnet_archive_preview_ok">${esc(L.btn_cancel || L.btn_close || L.btn_ok)}</button>${showDupDeleteBtn ? `<button class="pk-btn" id="pk_magnet_archive_delete_dup_source" style="color:#d93025;">${esc(L.btn_magnet_archive_delete_dup_source)}</button>` : ''}${ok ? `<button class="pk-btn pri" id="pk_magnet_archive_write">${esc(L.btn_magnet_archive_write)}</button>` : ''}</div>
+<div class="pk-modal-act"><button class="pk-btn" id="pk_magnet_archive_preview_ok">${esc(L.btn_cancel || L.btn_close || L.btn_ok)}</button>${ok ? `<button class="pk-btn pri" id="pk_magnet_extract_selected">提取选中磁链 (${ok})</button>` : ''}${showDupDeleteBtn ? `<button class="pk-btn" id="pk_magnet_archive_delete_dup_source" style="color:#d93025;">${esc(L.btn_magnet_archive_delete_dup_source)}</button>` : ''}${ok ? `<button class="pk-btn pri" id="pk_magnet_archive_write">${esc(L.btn_magnet_archive_write)}</button>` : ''}</div>
 </div>`);
 bindMagnetArchiveOverflowTips(m);
 bindPreviewIconFallback(m);
@@ -52464,6 +52347,52 @@ if (btn) btn.onclick = () => m.remove();
 const writeBtn = m.querySelector('#pk_magnet_archive_write');
 const dupDeleteBtn = m.querySelector('#pk_magnet_archive_delete_dup_source');
 let dupDeleteDone = false;
+
+const updateExtractCount = () => {
+const cbs = m.querySelectorAll('.pk-mag-extract-cb');
+const checked = Array.from(cbs).filter(cb => cb.checked).length;
+const countEl = m.querySelector('#pk_magnet_extract_count');
+if (countEl) countEl.textContent = `已选 ${checked}/${cbs.length}`;
+const extractBtn = m.querySelector('#pk_magnet_extract_selected');
+if (extractBtn) extractBtn.textContent = checked > 0 ? `提取选中磁链 (${checked})` : '提取选中磁链';
+};
+
+m.querySelectorAll('.pk-mag-extract-cb').forEach(cb => {
+cb.addEventListener('change', updateExtractCount);
+});
+
+const selectAllBtn = m.querySelector('#pk_magnet_extract_select_all');
+if (selectAllBtn) selectAllBtn.onclick = () => {
+m.querySelectorAll('.pk-mag-extract-cb').forEach(cb => cb.checked = true);
+updateExtractCount();
+};
+const deselectAllBtn = m.querySelector('#pk_magnet_extract_deselect_all');
+if (deselectAllBtn) deselectAllBtn.onclick = () => {
+m.querySelectorAll('.pk-mag-extract-cb').forEach(cb => cb.checked = false);
+updateExtractCount();
+};
+
+const extractBtn = m.querySelector('#pk_magnet_extract_selected');
+if (extractBtn) {
+extractBtn.onclick = () => {
+const cbs = m.querySelectorAll('.pk-mag-extract-cb');
+const selected = Array.from(cbs).filter(cb => cb.checked);
+if (!selected.length) {
+showToast('请先勾选要提取的磁力链接', 'warning');
+return;
+}
+const links = selected.map(cb => cb.getAttribute('data-magnet')).filter(Boolean);
+GM_setClipboard(links.join('\n'));
+extractBtn.textContent = '已复制!';
+extractBtn.style.background = '#4CAF50';
+setTimeout(() => {
+extractBtn.textContent = `提取选中磁链 (${links.length})`;
+extractBtn.style.background = '';
+}, 1500);
+showToast(`已复制 ${links.length} 个磁力链接到剪贴板`);
+};
+}
+
 m.tabIndex = 0;
 setTimeout(() => { if (document.contains(m)) m.focus(); }, 10);
 m.addEventListener('keydown', e => {
@@ -52472,7 +52401,7 @@ if (e.target && (e.target.isContentEditable || tag === 'input' || tag === 'texta
 if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.metaKey) {
 e.preventDefault();
 e.stopPropagation();
-const enterBtn = [writeBtn, dupDeleteBtn, btn].find(x => x && !x.disabled);
+const enterBtn = [extractBtn, writeBtn, dupDeleteBtn, btn].find(x => x && !x.disabled);
 enterBtn?.click();
 }
 }, true);
