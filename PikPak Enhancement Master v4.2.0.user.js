@@ -8,7 +8,7 @@
 // @name:id            PikPak Enhancement Master
 // @name:ms            PikPak Enhancement Master
 // @namespace          https://github.com/ericvlog/PikPak-Enhancement-Master
-// @version            4.2.2
+// @version            4.2.3
 // @author             digbug82
 // @license            AGPL-3.0-or-later
 // @description        PikPak 网盘增强：集成 Aria2/Gopeed/ABDM/IDM 下载、下载加速、下载过滤、分享链接解析、文件/文件夹查重、批量重命名、资源清理、批量解压、PotPlayer 直达、M3U 导出、排序与搜索增强、TXT 磁链提取、云归档、数据迁移、目录树导出、以图搜图、视音频播放增强等。
@@ -52303,7 +52303,7 @@ const tipHtml = esc(safeTitle);
 const cover = getMagnetArchiveTooltipCoverUrl(row.item);
 const tipAttrs = `data-pk-archive-title="${safeTitle}" data-pk-tip="${safeTitle}" data-pk-tip-html="${tipHtml}"${cover ? ` data-pk-thumb="${esc(cover)}"` : ''}`;
 const magnetUrl = row.meta && row.meta.rawMagnet ? esc(row.meta.rawMagnet) : '';
-const canExtract = row.type === 'ok' && magnetUrl;
+const canExtract = (row.type === 'ok' || row.type === 'dup') && magnetUrl;
 return `
 <div class="pk-magnet-archive-row">
 <div>${canExtract ? `<input type="checkbox" class="pk-mag-extract-cb" data-magnet="${magnetUrl}" data-idx="${idx}" style="margin-right:6px;cursor:pointer;">` : ''}<span class="pk-magnet-archive-status ${row.cls}">${esc(row.label)}</span></div>
@@ -52322,6 +52322,7 @@ const bad = result.bad.length;
 const rowsHtml = renderMagnetArchiveCheckRows(result) || `<div class="pk-magnet-archive-row"><div><span class="pk-magnet-archive-status skip">${esc(L.label_magnet_archive_skipped)}</span></div><div class="pk-magnet-archive-text">${esc(L.msg_magnet_archive_check_no_selected)}</div><div></div></div>`;
 const dupDeleteCount = getMagnetArchiveDuplicateDeleteRows(result).length;
 const showDupDeleteBtn = !ok && dupDeleteCount > 0;
+const extractableCount = ok + dup;
 const m = showModal(`
 <div class="pk-magnet-archive-preview">
 <h3 style="border:none;margin:0;font-size:18px;font-weight:800;color:var(--pk-fg);">${esc(L.title_magnet_archive_check)}</h3>
@@ -52331,12 +52332,12 @@ const m = showModal(`
 <div class="pk-magnet-archive-card"><b>${skip}</b><span>${esc(L.label_magnet_archive_skipped)}</span></div>
 <div class="pk-magnet-archive-card"><b>${bad}</b><span>${esc(L.label_magnet_archive_invalid)}</span></div>
 </div>
-${ok ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;"><button class="pk-btn" id="pk_magnet_extract_select_all" style="padding:2px 10px;font-size:12px;">全选</button><button class="pk-btn" id="pk_magnet_extract_deselect_all" style="padding:2px 10px;font-size:12px;">取消全选</button><span id="pk_magnet_extract_count" style="color:#888;">已选 0/${ok}</span></div>` : ''}
+${extractableCount ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;"><button class="pk-btn" id="pk_magnet_extract_select_all" style="padding:2px 10px;font-size:12px;">全选</button><button class="pk-btn" id="pk_magnet_extract_deselect_all" style="padding:2px 10px;font-size:12px;">取消全选</button><span id="pk_magnet_extract_count" style="color:#888;">已选 0/${extractableCount}</span></div>` : ''}
 <div class="pk-magnet-archive-table">
-<div class="pk-magnet-archive-row pk-magnet-archive-head"><div>${ok ? '选择' : ''}${esc(L.label_magnet_archive_reason)}</div><div>${esc(L.label_magnet_archive_source)}</div><div>${esc(L.label_magnet_archive_key)}</div></div>
+<div class="pk-magnet-archive-row pk-magnet-archive-head"><div>${extractableCount ? '选择' : ''}${esc(L.label_magnet_archive_reason)}</div><div>${esc(L.label_magnet_archive_source)}</div><div>${esc(L.label_magnet_archive_key)}</div></div>
 ${rowsHtml}
 </div>
-<div class="pk-modal-act"><button class="pk-btn" id="pk_magnet_archive_preview_ok">${esc(L.btn_cancel || L.btn_close || L.btn_ok)}</button>${ok ? `<button class="pk-btn pri" id="pk_magnet_extract_selected">提取选中磁链 (${ok})</button>` : ''}${showDupDeleteBtn ? `<button class="pk-btn" id="pk_magnet_archive_delete_dup_source" style="color:#d93025;">${esc(L.btn_magnet_archive_delete_dup_source)}</button>` : ''}${ok ? `<button class="pk-btn pri" id="pk_magnet_archive_write">${esc(L.btn_magnet_archive_write)}</button>` : ''}</div>
+<div class="pk-modal-act"><button class="pk-btn" id="pk_magnet_archive_preview_ok">${esc(L.btn_cancel || L.btn_close || L.btn_ok)}</button>${extractableCount ? `<button class="pk-btn pri" id="pk_magnet_extract_selected">提取选中磁链 (${extractableCount})</button>` : ''}${showDupDeleteBtn ? `<button class="pk-btn" id="pk_magnet_archive_delete_dup_source" style="color:#d93025;">${esc(L.btn_magnet_archive_delete_dup_source)}</button>` : ''}${ok ? `<button class="pk-btn pri" id="pk_magnet_archive_write">${esc(L.btn_magnet_archive_write)}</button>` : ''}</div>
 </div>`);
 bindMagnetArchiveOverflowTips(m);
 bindPreviewIconFallback(m);
